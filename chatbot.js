@@ -8,10 +8,13 @@ const client = new Client({
   }
 });
 
+
 // serviço de leitura do qr code
 client.on('qr', qr => {
-    qrcode.generate(qr, {small: true});
+    console.clear(); // limpa o console antes de exibir o QR
+    qrcode.generate(qr, { small: true });
 });
+
 // apos isso ele diz que foi tudo certo
 client.on('ready', () => {
     console.log('Tudo certo! WhatsApp conectado.');
