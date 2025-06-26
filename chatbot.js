@@ -1,25 +1,28 @@
 // leitor de qr code
 const qrcode = require('qrcode-terminal');
-const { Client, Buttons, List, MessageMedia } = require('whatsapp-web.js'); // Mudança Buttons
-//const client = new Client();
+const { Client, Buttons, List, MessageMedia } = require('whatsapp-web.js');
+
 const client = new Client({
   puppeteer: {
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
 });
 
-
-// serviço de leitura do qr code
+// serviço de leitura do QR Code
 client.on('qr', qr => {
     console.clear(); // limpa o console antes de exibir o QR
     qrcode.generate(qr, { small: true });
+
+    // Exibe o QR em formato de link (útil para colar em navegadores que geram QR visualmente)
+    console.log('\nLink do QR Code:', `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qr)}`);
 });
 
-// apos isso ele diz que foi tudo certo
+// confirma que o WhatsApp está conectado
 client.on('ready', () => {
     console.log('Tudo certo! WhatsApp conectado.');
 });
-// E inicializa tudo 
+
+// inicializa o cliente
 client.initialize();
 
 const delay = ms => new Promise(res => setTimeout(res, ms)); // Função que usamos para criar o delay entre uma ação e outra
