@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BarberZone — Configurações</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background:#0d1117; color:#e6edf3; }
+    .navbar { background:#161b22; border-bottom:1px solid #30363d; }
+    .navbar-brand { color:#fff; font-weight:700; font-size:1.2rem; text-decoration:none; }
+    .nav-link { color:#8b949e; font-size:.9rem; text-decoration:none; }
+    .nav-link:hover,.nav-link.active { color:#e6edf3; }
+    .card { background:#161b22; border:1px solid #30363d; border-radius:10px; }
+    .form-control,.form-select { background:#0d1117; border-color:#30363d; color:#e6edf3; }
+    .form-control:focus,.form-select:focus { background:#0d1117; border-color:#58a6ff; color:#e6edf3; box-shadow:none; }
+    .form-label { color:#8b949e; font-size:.85rem; }
+    .form-text  { color:#6e7681; font-size:.78rem; }
+    .btn-primary { background:#1f6feb; border:none; }
+    .btn-primary:hover { background:#388bfd; }
+    .section-title { color:#8b949e; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; margin-bottom:1rem; }
+    .day-btn { min-width:42px; }
+    .day-btn input { display:none; }
+    .day-btn label { cursor:pointer; display:block; padding:.35rem .6rem; border-radius:6px;
+                     border:1px solid #30363d; background:#0d1117; color:#8b949e; font-size:.85rem; text-align:center; }
+    .day-btn input:checked + label { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+    .alert-success { background:#1a3d1a; border-color:#3fb950; color:#3fb950; }
+  </style>
+</head>
+<body>
+
+<%- include('partials/navbar', { usuario, pagina: 'config' }) %>
+
+<div class="container" style="max-width:700px;">
+  <% if (salvo) { %>
+    <div class="alert alert-success mb-4 py-2">Configurações salvas com sucesso.</div>
+  <% } %>
+
+  <form method="POST" action="/configuracoes">
+
+    <!-- Horário de envio -->
+    <div class="card p-4 mb-4">
+      <p class="section-title">Horário de envio</p>
+      <div class="row g-3">
+        <div class="col-6">
+          <label class="form-label">Início (hora)</label>
+          <input type="number" name="horario_inicio" class="form-control" min="0" max="23" value="<%= cfg.horario_inicio || 9 %>" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Fim (hora)</label>
+          <input type="number" name="horario_fim" class="form-control" min="0" max="23" value="<%= cfg.horario_fim || 20 %>" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dias da semana -->
+    <div class="card p-4 mb-4">
+      <p class="section-title">Dias de envio</p>
+      <div class="d-flex gap-2 flex-wrap">
+        <% const dias = [['0','Dom'],['1','Seg'],['2','Ter'],['3','Qua'],['4','Qui'],['5','Sex'],['6','Sáb']];
+           const diasAtivos = (cfg.dias_semana || '1,2,3,4,5').split(',');
+           dias.forEach(([val, label]) => { %>
+          <div class="day-btn">
+            <input type="checkbox" name="dias_semana" id="dia<%= val %>" value="<%= val %>"
+              <%= diasAtivos.includes(val) ? 'checked' : '' %>>
+            <label for="dia<%= val %>"><%= label %></label>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Intervalos -->
+    <div class="card p-4 mb-4">
+      <p class="section-title">Intervalos</p>
+      <div class="row g-3">
+        <div class="col-6">
+          <label class="form-label">Intervalo entre envios (segundos)</label>
+          <input type="number" name="intervalo_entre_envios" class="form-control" min="5" value="<%= cfg.intervalo_entre_envios || 20 %>" required>
+          <div class="form-text">Pausa entre cada número durante o disparo</div>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Frequência de verificação (minutos)</label>
+          <input type="number" name="intervalo_verificacao" class="form-control" min="10" value="<%= cfg.intervalo_verificacao || 60 %>" required>
+          <div class="form-text">Com que frequência o bot busca novos leads</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recontato de indecisos -->
+    <div class="card p-4 mb-4">
+      <p class="section-title">Recontato de indecisos</p>
+      <div class="col-6">
+        <label class="form-label">Dias sem resposta para recontatar</label>
+        <input type="number" name="dias_indeciso" class="form-control" min="1" value="<%= cfg.dias_indeciso || 2 %>" required>
+        <div class="form-text">Leads que não responderam em X dias recebem follow-up</div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary px-4">
+      <i class="bi bi-check-lg me-1"></i>Salvar configurações
+    </button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

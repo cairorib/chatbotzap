@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BarberZone — Painel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background:#0d1117; color:#e6edf3; }
+    .navbar { background:#161b22; border-bottom:1px solid #30363d; }
+    .navbar-brand { color:#fff; font-weight:700; font-size:1.2rem; text-decoration:none; }
+    .nav-link { color:#8b949e; font-size:.9rem; text-decoration:none; }
+    .nav-link:hover,.nav-link.active { color:#e6edf3; }
+    .card { background:#161b22; border:1px solid #30363d; border-radius:10px; }
+    .card-stat { border-left:4px solid; }
+    .stat-pendente  { border-color:#58a6ff; }
+    .stat-enviado   { border-color:#d29922; }
+    .stat-indeciso  { border-color:#a371f7; }
+    .stat-interesse { border-color:#3fb950; }
+    .stat-link      { border-color:#238636; }
+    .stat-recusou   { border-color:#f85149; }
+    .stat-optout    { border-color:#6e7681; }
+    .stat-total     { border-color:#30363d; }
+    .stat-num  { font-size:2rem; font-weight:700; }
+    .stat-label{ font-size:.8rem; color:#8b949e; text-transform:uppercase; letter-spacing:.05em; }
+    .table { color:#e6edf3; }
+    .table thead th { background:#0d1117; border-color:#30363d; color:#8b949e; font-size:.8rem; text-transform:uppercase; }
+    .table tbody td { border-color:#21262d; vertical-align:middle; }
+    .table tbody tr:hover { background:#1c2128; }
+    .form-control, .form-select { background:#0d1117; border-color:#30363d; color:#e6edf3; }
+    .form-control:focus, .form-select:focus { background:#0d1117; border-color:#58a6ff; color:#e6edf3; box-shadow:none; }
+    .form-label { color:#8b949e; font-size:.85rem; }
+    .btn-primary { background:#1f6feb; border:none; }
+    .btn-primary:hover { background:#388bfd; }
+    .section-title { color:#8b949e; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; margin-bottom:1rem; }
+    .badge-status { font-size:.75rem; padding:.35em .65em; border-radius:20px; }
+    .modal-content { background:#161b22; border:1px solid #30363d; color:#e6edf3; }
+    .modal-header { border-color:#30363d; }
+    .btn-close { filter:invert(1); }
+    .filtro-btn { font-size:.8rem; }
+    .filtro-btn.active { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+  </style>
+</head>
+<body>
+
+<%- include('partials/navbar', { usuario, pagina: 'leads' }) %>
+
+<div class="container-fluid px-4">
+
+  <!-- Stats -->
+  <p class="section-title">Resumo</p>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-xl-1-5">
+      <div class="card card-stat stat-total p-3">
+        <div class="stat-num"><%= stats.total %></div>
+        <div class="stat-label">Total</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-stat stat-pendente p-3">
+        <div class="stat-num"><%= stats.pendente %></div>
+        <div class="stat-label">Pendentes</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-stat stat-enviado p-3">
+        <div class="stat-num"><%= stats.disparo_enviado %></div>
+        <div class="stat-label">Aguardando</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-stat stat-indeciso p-3">
+        <div class="stat-num"><%= stats.indeciso %></div>
+        <div class="stat-label">Indecisos</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-stat stat-interesse p-3">
+        <div class="stat-num"><%= stats.interessado %></div>
+        <div class="stat-label">Interessados</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-stat stat-link p-3">
+        <div class="stat-num"><%= stats.link_enviado %></div>
+        <div class="stat-label">Convertidos</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-stat stat-recusou p-3">
+        <div class="stat-num"><%= stats.recusou %></div>
+        <div class="stat-label">Recusaram</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-stat stat-optout p-3">
+        <div class="stat-num"><%= stats.optout %></div>
+        <div class="stat-label">Optout</div>
+      </div>
+    </div>
+  </div>
+
+  <% if (query.disparado) { %>
+    <div class="alert mb-4 py-2" style="background:#1a2d3d; border-color:#58a6ff; color:#58a6ff;">
+      <i class="bi bi-send me-1"></i>Disparo iniciado — o bot verificará os leads pendentes agora.
+    </div>
+  <% } %>
+
+  <% if (query.importados) { %>
+    <div class="alert mb-4 py-2" style="background:#1a3d1a; border-color:#3fb950; color:#3fb950;">
+      <i class="bi bi-check-circle me-1"></i>
+      <strong><%= query.importados %></strong> lead(s) importado(s) com sucesso.
+      <% if (query.erros > 0) { %>
+        — <strong><%= query.erros %></strong> linha(s) ignorada(s) (número inválido).
+      <% } %>
+    </div>
+  <% } %>
+
+  <div class="row g-4">
+
+    <!-- Adicionar lead + Importar CSV -->
+    <div class="col-12 col-lg-3">
+
+      <!-- Formulário individual -->
+      <div class="card p-4 mb-3">
+        <p class="section-title mb-3">Adicionar Lead</p>
+        <form method="POST" action="/leads/adicionar">
+          <div class="mb-3">
+            <label class="form-label">Número (com DDD e 55)</label>
+            <input type="text" name="numero" class="form-control" placeholder="5585999990000" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nome (opcional)</label>
+            <input type="text" name="nome" class="form-control" placeholder="João Barbeiro">
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Data de envio (opcional)</label>
+            <input type="date" name="data_agendada" class="form-control">
+            <div style="font-size:.75rem; color:#8b949e; margin-top:.4rem;">Vazio = enviar assim que possível</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-plus-lg me-1"></i>Adicionar
+          </button>
+        </form>
+      </div>
+
+      <!-- Importar CSV -->
+      <div class="card p-4">
+        <p class="section-title mb-1">Importar CSV</p>
+        <a href="/leads/modelo-csv" class="d-inline-flex align-items-center gap-1 mb-3"
+           style="font-size:.8rem; color:#58a6ff; text-decoration:none;">
+          <i class="bi bi-download"></i> Baixar modelo CSV
+        </a>
+        <form method="POST" action="/leads/importar" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Arquivo CSV</label>
+            <input type="file" name="csv" accept=".csv,text/csv" class="form-control" required>
+            <div style="font-size:.75rem; color:#8b949e; margin-top:.4rem;">
+              Colunas: numero, nome, data_agendada
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-upload me-1"></i>Importar
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- Tabela de leads -->
+    <div class="col-12 col-lg-9">
+      <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <p class="section-title mb-0">Leads</p>
+            <form method="POST" action="/bot/disparar" onsubmit="return confirm('Disparar para todos os leads pendentes agora?')">
+              <button type="submit" class="btn btn-sm btn-primary">
+                <i class="bi bi-send me-1"></i>Disparar agora
+              </button>
+            </form>
+          </div>
+          <div class="d-flex gap-1 flex-wrap">
+            <a href="/" class="btn btn-sm btn-outline-secondary filtro-btn <%= !filtro ? 'active' : '' %>">Todos</a>
+            <a href="/?status=pendente"       class="btn btn-sm btn-outline-secondary filtro-btn <%= filtro==='pendente' ? 'active' : '' %>">Pendentes</a>
+            <a href="/?status=disparo_enviado" class="btn btn-sm btn-outline-secondary filtro-btn <%= filtro==='disparo_enviado' ? 'active' : '' %>">Aguardando</a>
+            <a href="/?status=indeciso"       class="btn btn-sm btn-outline-secondary filtro-btn <%= filtro==='indeciso' ? 'active' : '' %>">Indecisos</a>
+            <a href="/?status=interessado"    class="btn btn-sm btn-outline-secondary filtro-btn <%= filtro==='interessado' ? 'active' : '' %>">Interessados</a>
+            <a href="/?status=link_enviado"   class="btn btn-sm btn-outline-secondary filtro-btn <%= filtro==='link_enviado' ? 'active' : '' %>">Convertidos</a>
+            <a href="/?status=recusou"        class="btn btn-sm btn-outline-secondary filtro-btn <%= filtro==='recusou' ? 'active' : '' %>">Recusaram</a>
+            <a href="/?status=optout"         class="btn btn-sm btn-outline-secondary filtro-btn <%= filtro==='optout' ? 'active' : '' %>">Optout</a>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Nome</th>
+                <th>Status</th>
+                <th>Tentativas</th>
+                <th>Agendado</th>
+                <th>Último contato</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (contatos.length === 0) { %>
+                <tr><td colspan="7" class="text-center py-4" style="color:#8b949e;">Nenhum lead encontrado.</td></tr>
+              <% } %>
+              <% contatos.forEach(c => { %>
+              <tr>
+                <td><code style="color:#79c0ff;"><%= c.numero %></code></td>
+                <td><%= c.nome || '—' %></td>
+                <td><%- badgeStatus(c.status) %></td>
+                <td><%= c.tentativas %></td>
+                <td><%= c.data_agendada ? new Date(c.data_agendada).toLocaleDateString('pt-BR') : '—' %></td>
+                <td style="font-size:.8rem; color:#8b949e;">
+                  <%= c.ultima_interacao ? new Date(c.ultima_interacao).toLocaleString('pt-BR') : '—' %>
+                </td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <form method="POST" action="/bot/disparar-lead/<%= c.id %>"
+                      onsubmit="return confirm('Disparar para <%= c.numero %> agora?')">
+                      <button type="submit" class="btn btn-sm btn-outline-primary" title="Disparar agora">
+                        <i class="bi bi-send"></i>
+                      </button>
+                    </form>
+                    <button class="btn btn-sm btn-outline-secondary"
+                      onclick='abrirEdicao(<%= JSON.stringify(c) %>)'
+                      title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <form method="POST" action="/leads/remover/<%= c.id %>"
+                      onsubmit="return confirm('Remover este lead?')">
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Remover">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal editar -->
+<div class="modal fade" id="modalEdicao" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Lead</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="formEdicao">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Número</label>
+            <input type="text" id="edit-numero" class="form-control" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nome</label>
+            <input type="text" name="nome" id="edit-nome" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" id="edit-status" class="form-select">
+              <option value="pendente">Pendente</option>
+              <option value="disparo_enviado">Aguardando resposta</option>
+              <option value="indeciso">Indeciso</option>
+              <option value="interessado">Interessado</option>
+              <option value="link_enviado">Link enviado (convertido)</option>
+              <option value="recusou">Recusou</option>
+              <option value="optout">Optout</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Data de envio</label>
+            <input type="date" name="data_agendada" id="edit-data" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer" style="border-color:#30363d;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function abrirEdicao(c) {
+  document.getElementById('edit-numero').value = c.numero;
+  document.getElementById('edit-nome').value   = c.nome || '';
+  document.getElementById('edit-status').value = c.status;
+  document.getElementById('edit-data').value   = c.data_agendada ? c.data_agendada.substring(0,10) : '';
+  document.getElementById('formEdicao').action = '/leads/editar/' + c.id;
+  new bootstrap.Modal(document.getElementById('modalEdicao')).show();
+}
+</script>
+</body>
+</html>
+
+<%
+function badgeStatus(s) {
+  const map = {
+    pendente:        ['58a6ff','Pendente'],
+    disparo_enviado: ['d29922','Aguardando'],
+    indeciso:        ['a371f7','Indeciso'],
+    interessado:     ['3fb950','Interessado'],
+    link_enviado:    ['238636','Convertido'],
+    recusou:         ['f85149','Recusou'],
+    optout:          ['6e7681','Optout'],
+  };
+  const [cor, label] = map[s] || ['6e7681', s];
+  return `<span class="badge badge-status" style="background:#${cor}22; color:#${cor}; border:1px solid #${cor}55;">${label}</span>`;
+}
+%>

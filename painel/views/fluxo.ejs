@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BarberZone — Fluxo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background:#0d1117; color:#e6edf3; }
+    .navbar { background:#161b22; border-bottom:1px solid #30363d; }
+    .navbar-brand { color:#fff; font-weight:700; font-size:1.2rem; text-decoration:none; }
+    .nav-link { color:#8b949e; font-size:.9rem; text-decoration:none; }
+    .nav-link:hover,.nav-link.active { color:#e6edf3; }
+    .card { background:#161b22; border:1px solid #30363d; border-radius:10px; }
+    .etapa-card { cursor:pointer; transition:.15s; }
+    .etapa-card:hover,.etapa-card.ativa { border-color:#58a6ff; }
+    .etapa-card.ativa { background:#1c2a3a; }
+    .msg-card { background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:1rem; }
+    .form-control,.form-select { background:#0d1117; border-color:#30363d; color:#e6edf3; }
+    .form-control:focus,.form-select:focus { background:#0d1117; border-color:#58a6ff; color:#e6edf3; box-shadow:none; }
+    .form-label { color:#8b949e; font-size:.85rem; }
+    .btn-primary { background:#1f6feb; border:none; }
+    .btn-primary:hover { background:#388bfd; }
+    .section-title { color:#8b949e; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; }
+    .modal-content { background:#161b22; border:1px solid #30363d; color:#e6edf3; }
+    .modal-header,.modal-footer { border-color:#30363d; }
+    .btn-close { filter:invert(1); }
+    .badge-tipo { font-size:.72rem; padding:.25em .6em; border-radius:20px; }
+    .tipo-texto  { background:#1f3d6e33; color:#58a6ff; border:1px solid #58a6ff55; }
+    .tipo-imagem { background:#2a3d1a33; color:#3fb950; border:1px solid #3fb95055; }
+    .tipo-audio  { background:#3d2a1a33; color:#d29922; border:1px solid #d2992255; }
+    pre { white-space:pre-wrap; font-family:inherit; font-size:.88rem; color:#c9d1d9; margin:0; }
+  </style>
+</head>
+<body>
+
+<%- include('partials/navbar', { usuario, pagina: 'fluxo' }) %>
+
+<div class="container-fluid px-4">
+  <div class="row g-4">
+
+    <!-- Lista de etapas -->
+    <div class="col-12 col-lg-3">
+      <p class="section-title mb-3">Etapas</p>
+      <div class="d-flex flex-column gap-2">
+        <% Object.entries(ETAPAS).forEach(([key, label]) => { %>
+          <div class="card p-3 etapa-card <%= etapaAtiva===key ? 'ativa' : '' %>"
+               onclick="location.href='/fluxo?etapa=<%= key %>'">
+            <div style="font-size:.9rem; font-weight:500;"><%= label %></div>
+            <div style="font-size:.75rem; color:#8b949e; margin-top:.2rem;">
+              <%= (fluxo[key]||[]).length %> mensagem(s)
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Mensagens da etapa selecionada -->
+    <div class="col-12 col-lg-9">
+      <% if (etapaAtiva) { %>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <p class="section-title mb-0"><%= ETAPAS[etapaAtiva] %></p>
+          <button class="btn btn-sm btn-primary" onclick="abrirAdicionar()">
+            <i class="bi bi-plus-lg me-1"></i>Adicionar mensagem
+          </button>
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+          <% (fluxo[etapaAtiva]||[]).forEach((m, i) => { %>
+            <div class="msg-card">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span style="color:#8b949e; font-size:.8rem;">#<%= m.ordem %></span>
+                  <span class="badge-tipo tipo-<%= m.tipo %>"><%= m.tipo.toUpperCase() %></span>
+                </div>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-secondary"
+                    onclick='abrirEdicao(<%= JSON.stringify(m) %>)'>
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <form method="POST" action="/fluxo/remover/<%= m.id %>?etapa=<%= etapaAtiva %>"
+                    onsubmit="return confirm('Remover esta mensagem?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <% if (m.tipo === 'texto') { %>
+                <pre><%= m.conteudo %></pre>
+              <% } else { %>
+                <div style="color:#8b949e; font-size:.85rem;">
+                  <i class="bi bi-<%= m.tipo==='imagem' ? 'image' : 'mic' %> me-1"></i>
+                  <%= m.conteudo %>
+                </div>
+              <% } %>
+            </div>
+          <% }) %>
+
+          <% if (!(fluxo[etapaAtiva]||[]).length) { %>
+            <div class="card p-4 text-center" style="color:#8b949e;">
+              Nenhuma mensagem nesta etapa. Clique em "Adicionar mensagem" para começar.
+            </div>
+          <% } %>
+        </div>
+
+      <% } else { %>
+        <div class="card p-5 text-center" style="color:#8b949e;">
+          <i class="bi bi-chat-dots" style="font-size:2rem; margin-bottom:1rem;"></i>
+          <div>Selecione uma etapa para editar suas mensagens.</div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Modal adicionar/editar -->
+<div class="modal fade" id="modalMensagem" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitulo">Mensagem</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="formMensagem" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Tipo</label>
+            <select name="tipo" id="tipoSelect" class="form-select" onchange="toggleTipo(this.value)">
+              <option value="texto">Texto</option>
+              <option value="imagem">Imagem</option>
+              <option value="audio">Áudio</option>
+            </select>
+          </div>
+
+          <div id="campoTexto" class="mb-3">
+            <label class="form-label">Conteúdo da mensagem</label>
+            <textarea name="conteudo" id="campoConteudo" class="form-control" rows="6"
+              placeholder="Digite a mensagem. Use *negrito*, _itálico_, emojis..."></textarea>
+            <div class="form-text">Suporta formatação WhatsApp: *negrito* _itálico_ ~tachado~</div>
+          </div>
+
+          <div id="campoArquivo" class="mb-3" style="display:none;">
+            <label class="form-label">Arquivo</label>
+            <input type="file" name="arquivo" id="arquivoInput" class="form-control"
+              accept="image/*,audio/*">
+            <div class="form-text">Imagens: JPG, PNG, GIF — Áudio: MP3, OGG, MP4</div>
+            <div id="arquivoAtual" style="margin-top:.5rem; font-size:.8rem; color:#8b949e;"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Ordem</label>
+            <input type="number" name="ordem" id="campoOrdem" class="form-control" min="1" value="1">
+            <div class="form-text">Mensagens com ordem menor são enviadas primeiro</div>
+          </div>
+
+          <input type="hidden" name="etapa" id="campoEtapa" value="<%= etapaAtiva %>">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleTipo(tipo) {
+  document.getElementById('campoTexto').style.display  = tipo === 'texto'  ? '' : 'none';
+  document.getElementById('campoArquivo').style.display = tipo !== 'texto'  ? '' : 'none';
+  document.getElementById('campoConteudo').required    = tipo === 'texto';
+  document.getElementById('arquivoInput').required     = tipo !== 'texto';
+}
+
+function abrirAdicionar() {
+  document.getElementById('modalTitulo').textContent = 'Adicionar mensagem';
+  document.getElementById('formMensagem').action = '/fluxo/adicionar?etapa=<%= etapaAtiva %>';
+  document.getElementById('tipoSelect').value = 'texto';
+  document.getElementById('campoConteudo').value = '';
+  document.getElementById('campoOrdem').value = '<%= (fluxo[etapaAtiva]||[]).length + 1 %>';
+  document.getElementById('arquivoAtual').textContent = '';
+  toggleTipo('texto');
+  new bootstrap.Modal(document.getElementById('modalMensagem')).show();
+}
+
+function abrirEdicao(m) {
+  document.getElementById('modalTitulo').textContent = 'Editar mensagem';
+  document.getElementById('formMensagem').action = '/fluxo/editar/' + m.id + '?etapa=<%= etapaAtiva %>';
+  document.getElementById('tipoSelect').value = m.tipo;
+  document.getElementById('campoConteudo').value = m.tipo === 'texto' ? m.conteudo : '';
+  document.getElementById('campoOrdem').value = m.ordem;
+  document.getElementById('arquivoAtual').textContent = m.tipo !== 'texto' ? 'Atual: ' + m.conteudo : '';
+  toggleTipo(m.tipo);
+  new bootstrap.Modal(document.getElementById('modalMensagem')).show();
+}
+</script>
+</body>
+</html>

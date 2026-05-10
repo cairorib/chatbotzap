@@ -1,0 +1,14 @@
+2026/05/09-23:08:12.210 5308 Reusing MANIFEST C:\Users\Cairo\Desktop\chatbotzap\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
+2026/05/09-23:08:12.213 5308 Recovering log #13
+2026/05/09-23:08:12.213 5308 Reusing old log C:\Users\Cairo\Desktop\chatbotzap\.wwebjs_auth\session\Default\Local Storage\leveldb/000013.log 
+2026/05/09-23:09:12.231 58e0 Level-0 table #17: started
+2026/05/09-23:09:12.238 58e0 Level-0 table #17: 13901 bytes OK
+2026/05/09-23:09:12.240 58e0 Delete type=0 #13
+2026/05/09-23:09:12.240 58e0 Compacting 4@0 + 0@1 files
+2026/05/09-23:09:12.244 58e0 Generated table #18@0: 104 keys, 6470 bytes
+2026/05/09-23:09:12.244 58e0 Compacted 4@0 + 0@1 files => 6470 bytes
+2026/05/09-23:09:12.245 58e0 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/09-23:09:12.245 58e0 Delete type=2 #7
+2026/05/09-23:09:12.245 58e0 Delete type=2 #11
+2026/05/09-23:09:12.245 58e0 Delete type=2 #14
+2026/05/09-23:09:12.245 58e0 Delete type=2 #17
