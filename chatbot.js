@@ -89,6 +89,11 @@ http.createServer(async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   if (req.method !== 'POST') { res.statusCode = 405; return res.end('{}'); }
 
+  if (req.url === '/reload') {
+    carregarConfig().then(() => carregarFluxo()).catch(console.error);
+    console.log('[RELOAD] Config e fluxo recarregados do banco.');
+    return res.end(JSON.stringify({ ok: true }));
+  }
   if (req.url === '/disparar') {
     verificarEDisparar().catch(console.error);
     return res.end(JSON.stringify({ ok: true }));
@@ -197,7 +202,7 @@ async function enviarAbordagem(numero, etapa) {
       }
     }
 
-    setState(id, { step: 'aguardando_interesse' });
+    setState(numero, { step: 'aguardando_interesse' }); // usa o número limpo como chave
     if (etapa === 'followup') await db.marcarIndeciso(numero);
     else                      await db.marcarDisparado(numero, id); // salva o LID/waid
     console.log(`[DISPARO] ✔ ${numero} (${etapa})`);
@@ -216,14 +221,8 @@ const userState   = {};
 const getState    = from => userState[from] || {};
 const setState    = (from, data) => { userState[from] = { ...getState(from), ...data }; };
 
-// ── Anti-spam ─────────────────────────────────────────────────
-const recentlySent = {};
-const canReply = from => {
-  const now = Date.now(), last = recentlySent[from] || 0;
-  if (now - last < 3000) return false;
-  recentlySent[from] = now;
-  return true;
-};
+// ── Anti-concorrência: bloqueia novo msg enquanto processa o anterior ─
+const processing = new Set();
 
 // ── Intenções ─────────────────────────────────────────────────
 const ehSim    = t => /\b(sim|s|si|claro|quero|pode|ok|bora|topo|tapa|yes|manda|tá|ta|aceito|vamos|com certeza)\b/i.test(t);
@@ -231,15 +230,16 @@ const ehNao    = t => /\b(não|nao|n|agora não|depois|deixa|dispensa|obrigado|o
 const ehOptout = t => /\b(para|parar|sair|remover|cancelar|stop|descadastrar|me remova|me retire|não me mande|nao me mande)\b/i.test(t);
 
 // ── Handler principal ─────────────────────────────────────────
-client.on('message_create', async msg => {
-  try {
-  if (msg.fromMe) return;
+client.on('message', async msg => {
   if (!msg.from.endsWith('@c.us') && !msg.from.endsWith('@lid')) return;
-  if (!canReply(msg.from)) return;
+  if (processing.has(msg.from)) return;
 
-  const body  = (msg.body || '').trim();
-  const from  = msg.from;
+  const body = (msg.body || '').trim();
+  const from = msg.from;
   if (!body) return;
+
+  processing.add(from);
+  try {
 
   const chat = await msg.getChat();
 
@@ -252,7 +252,12 @@ client.on('message_create', async msg => {
     if (porWaid) {
       numero = porWaid.numero;
     } else {
-      numero = from.replace(/@.*/, '');
+      try {
+        const contact = await msg.getContact();
+        numero = contact.id.user;
+      } catch {
+        numero = from.replace(/@.*/, '');
+      }
     }
   }
   console.log(`[MSG] from:${from} | numero:${numero} | body:${body}`);
@@ -260,27 +265,27 @@ client.on('message_create', async msg => {
   // ── Optout (prioridade máxima) ────────────────────────────
   if (ehOptout(body)) {
     await db.marcarOptout(numero);
-    setState(from, { step: 'optout' });
+    setState(numero, { step: 'optout' });
     await sendEtapa(chat, from, 'optout');
     return;
   }
 
   // Restaura estado do banco após reinício
-  let state = getState(from);
+  let state = getState(numero);
   if (!state.step) {
     const dbc = await db.getContato(numero);
-    if (dbc?.etapa) { setState(from, { step: dbc.etapa }); state = getState(from); }
+    if (dbc?.etapa) { setState(numero, { step: dbc.etapa }); state = getState(numero); }
   }
 
   // ── Etapa 1: responde à abordagem ────────────────────────
   if (state.step === 'aguardando_interesse') {
     if (ehSim(body)) {
-      setState(from, { step: 'aguardando_link' });
+      setState(numero, { step: 'aguardando_link' });
       await db.atualizarContato(numero, 'interessado', 'aguardando_link');
       await sendEtapa(chat, from, 'solucao');
       await sendEtapa(chat, from, 'preco', '\n\n› Digite *SIM* ou *NÃO*');
     } else if (ehNao(body)) {
-      setState(from, { step: 'encerrado' });
+      setState(numero, { step: 'encerrado' });
       await db.atualizarContato(numero, 'recusou', 'encerrado');
       await sendEtapa(chat, from, 'encerramento');
     } else {
@@ -292,11 +297,11 @@ client.on('message_create', async msg => {
   // ── Etapa 2: responde após ver preço ─────────────────────
   if (state.step === 'aguardando_link') {
     if (ehSim(body)) {
-      setState(from, { step: 'concluido' });
+      setState(numero, { step: 'concluido' });
       await db.atualizarContato(numero, 'link_enviado', 'concluido');
       await sendEtapa(chat, from, 'link');
     } else if (ehNao(body)) {
-      setState(from, { step: 'encerrado' });
+      setState(numero, { step: 'encerrado' });
       await db.atualizarContato(numero, 'recusou', 'encerrado');
       await sendEtapa(chat, from, 'encerramento');
     } else {
@@ -309,8 +314,12 @@ client.on('message_create', async msg => {
   const dbc = await db.getContato(numero);
   if (dbc?.status === 'optout') return;
 
-  setState(from, { step: 'aguardando_interesse' });
+  setState(numero, { step: 'aguardando_interesse' });
   await db.atualizarContato(numero, 'disparo_enviado', 'aguardando_interesse');
   await sendEtapa(chat, from, 'abordagem', '\n\n› Digite *SIM* ou *NÃO*');
-  } catch(e) { console.error('[HANDLER]', e.message, e.stack); }
+  } catch(e) {
+    console.error('[HANDLER]', e.message, e.stack);
+  } finally {
+    processing.delete(from);
+  }
 });

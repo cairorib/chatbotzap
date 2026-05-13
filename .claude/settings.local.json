@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ffmpeg -version)",
+      "PowerShell(ffmpeg *)",
+      "Bash(git restore *)",
+      "Bash(node -e ' *)",
+      "Bash(node --check chatbot.js)"
+    ]
+  }
+}

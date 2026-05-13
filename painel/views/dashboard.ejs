@@ -101,6 +101,12 @@
     </div>
   </div>
 
+  <% if (query.recarregado) { %>
+    <div class="alert mb-4 py-2" style="background:#1a2d1a; border-color:#3fb950; color:#3fb950;">
+      <i class="bi bi-arrow-clockwise me-1"></i>Bot recarregado — configurações e fluxo atualizados com os dados do banco.
+    </div>
+  <% } %>
+
   <% if (query.disparado) { %>
     <div class="alert mb-4 py-2" style="background:#1a2d3d; border-color:#58a6ff; color:#58a6ff;">
       <i class="bi bi-send me-1"></i>Disparo iniciado — o bot verificará os leads pendentes agora.

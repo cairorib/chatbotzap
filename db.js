@@ -185,9 +185,13 @@ async function getMensagem(id) {
 }
 
 async function adicionarMensagem(etapa, tipo, conteudo, ordem) {
+  const [[{ maxOrdem }]] = await pool.query(
+    'SELECT COALESCE(MAX(ordem), 0) AS maxOrdem FROM fluxo WHERE etapa = ?', [etapa]
+  );
+  const ordemFinal = Math.max(ordem, maxOrdem + 1);
   await pool.query(
     'INSERT INTO fluxo (etapa, tipo, conteudo, ordem) VALUES (?, ?, ?, ?)',
-    [etapa, tipo, conteudo, ordem]
+    [etapa, tipo, conteudo, ordemFinal]
   );
 }
 

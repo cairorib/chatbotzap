@@ -7,6 +7,11 @@
     <span style="color:#8b949e; font-size:.8rem; border-left:1px solid #30363d; padding-left:1rem;">
       <i class="bi bi-person-circle me-1"></i><%= usuario.email %>
     </span>
+    <form method="POST" action="/bot/recarregar" style="display:inline;">
+      <button type="submit" class="btn btn-sm btn-outline-warning" title="Recarrega config e fluxo do banco sem reiniciar o bot">
+        <i class="bi bi-arrow-clockwise me-1"></i>Recarregar bot
+      </button>
+    </form>
     <a href="/logout" class="btn btn-sm btn-outline-secondary">Sair</a>
   </div>
 </nav>

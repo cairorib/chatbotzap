@@ -1,3 +1,14 @@
-2026/05/09-23:08:12.711 58e0 Reusing MANIFEST C:\Users\Cairo\Desktop\chatbotzap\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2026/05/09-23:08:12.711 58e0 Recovering log #42
-2026/05/09-23:08:12.722 58e0 Reusing old log C:\Users\Cairo\Desktop\chatbotzap\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000042.log 
+2026/05/12-22:01:36.923 48f0 Reusing MANIFEST C:\Users\Cairo\Desktop\chatbotzap\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/12-22:01:36.923 48f0 Recovering log #116
+2026/05/12-22:01:36.941 48f0 Reusing old log C:\Users\Cairo\Desktop\chatbotzap\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000116.log 
+2026/05/12-22:05:09.793 2578 Level-0 table #122: started
+2026/05/12-22:05:09.821 2578 Level-0 table #122: 1328743 bytes OK
+2026/05/12-22:05:09.823 2578 Delete type=0 #116
+2026/05/12-22:05:16.915 2578 Compacting 1@1 + 2@2 files
+2026/05/12-22:05:16.975 2578 Generated table #123@1: 65107 keys, 2254118 bytes
+2026/05/12-22:05:16.983 2578 Generated table #124@1: 3670 keys, 215947 bytes
+2026/05/12-22:05:16.983 2578 Compacted 1@1 + 2@2 files => 2470065 bytes
+2026/05/12-22:05:16.984 2578 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/05/12-22:05:16.984 2578 Delete type=2 #118
+2026/05/12-22:05:16.984 2578 Delete type=2 #119
+2026/05/12-22:05:16.984 2578 Delete type=2 #122

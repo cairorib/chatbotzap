@@ -71,7 +71,7 @@
             <div class="msg-card">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="d-flex align-items-center gap-2">
-                  <span style="color:#8b949e; font-size:.8rem;">#<%= m.ordem %></span>
+                  <span style="color:#8b949e; font-size:.8rem;">nº <%= m.ordem %></span>
                   <span class="badge-tipo tipo-<%= m.tipo %>"><%= m.tipo.toUpperCase() %></span>
                 </div>
                 <div class="d-flex gap-1">
@@ -150,9 +150,9 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Ordem</label>
+            <label class="form-label">Posição na sequência</label>
             <input type="number" name="ordem" id="campoOrdem" class="form-control" min="1" value="1">
-            <div class="form-text">Mensagens com ordem menor são enviadas primeiro</div>
+            <div class="form-text">Ex: posição 1 é enviada primeiro, posição 2 em seguida, e assim por diante.</div>
           </div>
 
           <input type="hidden" name="etapa" id="campoEtapa" value="<%= etapaAtiva %>">
@@ -168,31 +168,38 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+let _modoEdicao = false;
+
 function toggleTipo(tipo) {
-  document.getElementById('campoTexto').style.display  = tipo === 'texto'  ? '' : 'none';
-  document.getElementById('campoArquivo').style.display = tipo !== 'texto'  ? '' : 'none';
-  document.getElementById('campoConteudo').required    = tipo === 'texto';
-  document.getElementById('arquivoInput').required     = tipo !== 'texto';
+  document.getElementById('campoTexto').style.display   = tipo === 'texto' ? '' : 'none';
+  document.getElementById('campoArquivo').style.display = tipo !== 'texto' ? '' : 'none';
+  document.getElementById('campoConteudo').required     = tipo === 'texto';
+  // Arquivo obrigatório só ao ADICIONAR — na edição o arquivo atual é mantido
+  document.getElementById('arquivoInput').required      = tipo !== 'texto' && !_modoEdicao;
 }
 
 function abrirAdicionar() {
+  _modoEdicao = false;
   document.getElementById('modalTitulo').textContent = 'Adicionar mensagem';
   document.getElementById('formMensagem').action = '/fluxo/adicionar?etapa=<%= etapaAtiva %>';
   document.getElementById('tipoSelect').value = 'texto';
   document.getElementById('campoConteudo').value = '';
   document.getElementById('campoOrdem').value = '<%= (fluxo[etapaAtiva]||[]).length + 1 %>';
   document.getElementById('arquivoAtual').textContent = '';
+  document.getElementById('arquivoInput').value = '';
   toggleTipo('texto');
   new bootstrap.Modal(document.getElementById('modalMensagem')).show();
 }
 
 function abrirEdicao(m) {
+  _modoEdicao = true;
   document.getElementById('modalTitulo').textContent = 'Editar mensagem';
   document.getElementById('formMensagem').action = '/fluxo/editar/' + m.id + '?etapa=<%= etapaAtiva %>';
   document.getElementById('tipoSelect').value = m.tipo;
   document.getElementById('campoConteudo').value = m.tipo === 'texto' ? m.conteudo : '';
   document.getElementById('campoOrdem').value = m.ordem;
   document.getElementById('arquivoAtual').textContent = m.tipo !== 'texto' ? 'Atual: ' + m.conteudo : '';
+  document.getElementById('arquivoInput').value = '';
   toggleTipo(m.tipo);
   new bootstrap.Modal(document.getElementById('modalMensagem')).show();
 }

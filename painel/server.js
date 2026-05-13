@@ -4,7 +4,19 @@ const bcrypt  = require('bcryptjs');
 const multer  = require('multer');
 const path    = require('path');
 const http    = require('http');
+const fs      = require('fs');
 const db      = require('../db');
+
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+function deletarArquivo(caminho) {
+  if (!caminho) return;
+  const abs = path.isAbsolute(caminho)
+    ? caminho
+    : path.join(__dirname, '..', caminho);
+  fs.unlink(abs, () => {});
+}
 
 // Chama a API interna do bot
 function chamarBot(rota) {
@@ -34,14 +46,16 @@ function parseCsvLine(linha) {
 const app  = express();
 const PORT = 3000;
 
-// ── Upload de mídia (imagem/áudio) ────────────────────────────
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '..', 'uploads'),
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
+// ── Upload de mídia (imagem/áudio) — lê em memória, grava depois ─
+// Evita conflito quando o arquivo de origem está na mesma pasta de destino
+const upload = multer({ storage: multer.memoryStorage() });
+
+function salvarUpload(file) {
+  const nome = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const dest = path.join(UPLOADS_DIR, nome);
+  fs.writeFileSync(dest, file.buffer);
+  return nome;
+}
 
 // ── Upload de CSV (em memória) ────────────────────────────────
 const uploadCSV = multer({ storage: multer.memoryStorage() });
@@ -192,35 +206,66 @@ app.get('/fluxo', auth, async (req, res) => {
   res.render('fluxo', { fluxo, etapaAtiva, ETAPAS, usuario: req.session.user, pagina: 'fluxo' });
 });
 
-app.post('/fluxo/adicionar', auth, upload.single('arquivo'), async (req, res) => {
+app.post('/fluxo/adicionar', auth, (req, res, next) => {
+  upload.single('arquivo')(req, res, err => {
+    if (err || req.aborted) return res.redirect('/fluxo?etapa=' + (req.query.etapa || '') + '&erro=upload');
+    next();
+  });
+}, async (req, res) => {
   const etapa = req.query.etapa;
   const { tipo, conteudo, ordem } = req.body;
   let conteudoFinal = conteudo;
   if ((tipo === 'imagem' || tipo === 'audio') && req.file) {
-    conteudoFinal = 'uploads/' + req.file.filename;
+    conteudoFinal = 'uploads/' + salvarUpload(req.file);
   }
   if (conteudoFinal) await db.adicionarMensagem(etapa, tipo, conteudoFinal, parseInt(ordem) || 1);
   res.redirect('/fluxo?etapa=' + etapa);
 });
 
-app.post('/fluxo/editar/:id', auth, upload.single('arquivo'), async (req, res) => {
+app.post('/fluxo/editar/:id', auth, (req, res, next) => {
+  upload.single('arquivo')(req, res, err => {
+    if (err || req.aborted) return res.redirect('/fluxo?etapa=' + (req.query.etapa || '') + '&erro=upload');
+    next();
+  });
+}, async (req, res) => {
   const etapa = req.query.etapa;
   const { tipo, conteudo, ordem } = req.body;
-  let conteudoFinal = conteudo;
-  if ((tipo === 'imagem' || tipo === 'audio') && req.file) {
-    conteudoFinal = 'uploads/' + req.file.filename;
+
+  let conteudoFinal;
+  if (tipo === 'texto') {
+    conteudoFinal = conteudo;
+  } else if (req.file) {
+    // Novo arquivo enviado: apaga o antigo e usa o novo
+    const nome = salvarUpload(req.file);
+    const atual = await db.getMensagem(req.params.id);
+    if (atual?.conteudo && atual.conteudo !== 'uploads/' + nome) {
+      deletarArquivo(atual.conteudo);
+    }
+    conteudoFinal = 'uploads/' + nome;
+  } else {
+    // Sem novo arquivo: mantém o caminho atual do banco
+    const atual = await db.getMensagem(req.params.id);
+    conteudoFinal = atual?.conteudo || '';
   }
+
   if (conteudoFinal) await db.editarMensagem(req.params.id, tipo, conteudoFinal, parseInt(ordem) || 1);
   res.redirect('/fluxo?etapa=' + etapa);
 });
 
 app.post('/fluxo/remover/:id', auth, async (req, res) => {
   const etapa = req.query.etapa;
+  const msg = await db.getMensagem(req.params.id);
+  if (msg?.tipo !== 'texto') deletarArquivo(msg?.conteudo);
   await db.removerMensagem(req.params.id);
   res.redirect('/fluxo?etapa=' + etapa);
 });
 
 // ── Disparo manual ────────────────────────────────────────────
+app.post('/bot/recarregar', auth, async (req, res) => {
+  await chamarBot('/reload');
+  res.redirect('/?recarregado=1');
+});
+
 app.post('/bot/disparar', auth, async (req, res) => {
   await chamarBot('/disparar');
   res.redirect('/?disparado=1');
